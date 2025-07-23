@@ -243,16 +243,22 @@ class MetadataManager:
             else:
                 package_data["license_id"] = 'notspecified'
 
-        # 6. private
+        # 6. private field handling
         if "private" in package_data:
-            sichtbarkeit = str(package_data["private"]).strip()
-            print("sichtbarkeit:", sichtbarkeit)
-            if sichtbarkeit == "Öffentlich":
-                package_data["private"] = False
-            else:
-                package_data["private"] = True
+            sichtbarkeit = str(package_data.get("private", "")).strip()
+            print("DEBUG - Raw visibility value:", sichtbarkeit)
+            # Fix visibility logic
+            package_data["private"] = sichtbarkeit != "Öffentlich"
+            print("DEBUG - Setting private to:", package_data["private"])
+        else:
+            # Default to public
+            package_data["private"] = False
 
-        print("private to CKAN:", package_data.get('private', 'NOT SET'))
+        # Ensure state is active
+        package_data["state"] = "active"
+
+        print("DEBUG - Final package visibility:", "Public" if not package_data["private"] else "Private")
+        print("DEBUG - Final package state:", package_data["state"])
         # 7. resources
         url = row_data.get('Datei/ Link')
         if url:
@@ -305,7 +311,7 @@ class MetadataManager:
         else:
             raise Exception(f"Organization '{org_title}' not found in available organizations!")
 
-        package_data["type"] = schema_type
+        package_data["type"] = schema_type  
 
         print('DEBUG package_data:', json.dumps(package_data, indent=2, ensure_ascii=False))
         return package_data
@@ -473,6 +479,20 @@ def is_valid_geojson(val):
     except Exception:
         return False
 
+def compare_mapped_fields(sheet_data, ckan_data, field_mappings):
+    """Compare all mapped fields between sheet data and CKAN data. Return True if different, False if same."""
+    for excel_col, ckan_field in field_mappings.items():
+        sheet_val = sheet_data.get(excel_col, "")
+        ckan_val = ckan_data.get(ckan_field, "")
+        # Normalize for comparison
+        if isinstance(sheet_val, (list, tuple)):
+            sheet_val = list(sheet_val)
+        if isinstance(ckan_val, (list, tuple)):
+            ckan_val = list(ckan_val)
+        if str(sheet_val).strip() != str(ckan_val).strip():
+            return True  # Difference found
+    return False
+
 if __name__ == "__main__":
     api_key, api_url, path, schema_config = load_config()
     ckan_manager = CKANManager(api_url, api_key)
@@ -490,87 +510,59 @@ if __name__ == "__main__":
     for sheet_name in schema_sheets:
         try:
             sheet_index = excel_handler.wb.sheetnames.index(sheet_name)
-            print(f"\nProcessing {sheet_name} sheet...")
-
-            # Get headers from first row
             worksheet = excel_handler.wb.worksheets[sheet_index]
             headers = list(next(worksheet.iter_rows(min_row=1, max_row=1, values_only=True)))
-            print(f"Headers: {headers}")
-
-            # Get data rows (skip header row)
             for row in worksheet.iter_rows(min_row=2, values_only=True):
                 if all(cell is None or cell == '' for cell in row):
-                    continue  # Skip empty rows
-
+                    continue
                 try:
-                    # Convert row to list and create dictionary mapping headers to values
                     row_list = list(row)
                     row_data = dict(zip(headers, row_list))
-                    print(f"\nRAW ROW DATA: {row_data}")
-
-                    # Pass the row data dictionary instead of tuple
                     package_data = metadata_manager.validate_and_construct_package(row_data, sheet_name)
-                    print("MAPPED CKAN PACKAGE DATA:", json.dumps(package_data, indent=2))
-
-                    # delete illegeal spatial field
-                    if "spatial" in package_data:
-                        val = package_data["spatial"]
-                        if not (isinstance(val, str) and is_valid_geojson(val)):
-                            del package_data["spatial"]
-
-                    # After the generic field mapping
-                    if "supported_method" in package_data:
-                        val = package_data["supported_method"]
-                        if isinstance(val, str):
-                            # Split by semicolon, strip whitespace, and filter out empty values
-                            package_data["supported_method"] = [v.strip() for v in val.split(";") if v.strip()]
-
+                    catalog_title = package_data.get('title', '[No Title]')
+                    dataset_name = package_data.get('name')
+                    field_mappings = metadata_manager.get_template_for_schema(sheet_name).get('field_mappings', {})
+                    
                     try:
-                        response = ckan_manager.post('/api/3/action/package_create', package_data)
-                        if response['success']:
-                            print(f"Successfully created catalog: {response['result']['title']}")
+                        # Check if dataset exists
+                        show_resp = ckan_manager.post('/api/3/action/package_show', {"id": dataset_name})
+                        if show_resp.get("success"):
+                            existing = show_resp["result"]
+                            # Compare fields
+                            if compare_mapped_fields(row_data, existing, field_mappings):
+                                # Update if different
+                                update_data = existing.copy()
+                                update_data.update(package_data)
+                                update_data["id"] = existing["id"]
+                                # Remove fields that shouldn't be updated
+                                for key in ["revision_id", "metadata_created", "metadata_modified", "creator_user_id"]:
+                                    update_data.pop(key, None)
+                                
+                                print(f"Updating existing dataset: {catalog_title}")
+                                update_resp = ckan_manager.post('/api/3/action/package_update', update_data)
+                                if update_resp.get("success"):
+                                    print(f"Successfully UPDATED: {catalog_title}")
+                                else:
+                                    print(f"Failed to update: {catalog_title} - {update_resp}")
+                            else:
+                                print(f"No updates needed for: {catalog_title}")
                         else:
-                            print(f"Failed to create catalog:\n{response}")
+                            # Create new if doesn't exist
+                            print(f"Creating new dataset: {catalog_title}")
+                            response = ckan_manager.post('/api/3/action/package_create', package_data)
+                            if response.get('success'):
+                                print(f"Successfully CREATED: {catalog_title}")
+                            else:
+                                print(f"Failed to create: {catalog_title} - {response}")
                     except Exception as e:
                         error_msg = str(e)
-                        if "already in use" in error_msg or "That URL is already in use" in error_msg:
-                            print("Dataset already exists, will compare and update if needed.")
-                            # Fetch the existing package
-                            try:
-                                show_resp = ckan_manager.post('/api/3/action/package_show', {"id": package_data["name"]})
-                                if show_resp.get("success"):
-                                    existing = show_resp["result"]
-                                    # merge existing and new data, new data priority
-                                    update_data = existing.copy()
-                                    update_data.update(package_data)
-                                    # Must have id field
-                                    # Remove read-only fields
-                                    update_data["id"] = existing["id"]
-                                    # remove read-only fields
-                                    for key in ["revision_id", "metadata_created", "metadata_modified", "state", "creator_user_id"]:
-                                        update_data.pop(key, None)
-                                    print("Updating fields:", update_data)
-                                    update_resp = ckan_manager.post('/api/3/action/package_update', update_data)
-                                    if update_resp.get("success"):
-                                        print(f"Successfully updated catalog: {update_resp['result']['title']}")
-                                    else:
-                                        print(f"Failed to update catalog:\n{update_resp}")
-                                else:
-                                    print("Failed to fetch existing package for update.")
-                            except Exception as e2:
-                                print(f"Error during update: {e2}")
-                        else:
-                            print(f"Error processing row in {sheet_name}: {error_msg}")
-
+                        print(f"Error processing dataset {catalog_title}: {error_msg}")
+                        continue
                 except Exception as e:
-                    print(f"Error processing row in {sheet_name}: {str(e)}")
+                    print(f"FAILED: [Unknown Title] - {str(e)}")
                     continue
-
         except ValueError as e:
-            print(f"Error: Sheet '{sheet_name}' not found in workbook")
             continue
         except Exception as e:
-            print(f"Error processing sheet '{sheet_name}': {str(e)}")
             continue
-
     print("\nProcessing complete!")

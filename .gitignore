@@ -1,3 +1,5 @@
 test.xlsx
 .~lock.test.xlsx#
 config.ini
+.env
+
