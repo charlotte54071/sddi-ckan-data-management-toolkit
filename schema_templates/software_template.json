@@ -1,0 +1,43 @@
+{
+    "schema_type": "software",
+    "field_mappings": {
+        "Title": "title",
+        "URL": "name",
+        "Description": "notes",
+        "Tags": "tag_string",
+        "License": "license_id",
+        "Author": "author__author_name",
+        "Email-Author": "author__author_email",
+        "Maintainer": "maintainer__maintainer_name",
+        "E-Mail Maintainer": "maintainer__maintainer_email",
+        "Phone Maintainer": "maintainer__phone",
+        "Role": "maintainer__role",
+        "Organization": "owner_org",
+        "Hauptkategorie": "main_category",
+        "Thema": "theme",
+        "Language": "language",
+        "Version": "version",
+        "Start of Validity Period": "begin_collection_date",
+        "End of Validity Period": "end_collection_date",
+        "Spatial": "spatial",
+        "Privacy Policy": "licence_agreement",
+        "Life Cycle Phase": "lifecycle_phase",
+        "HOAI Service Phase": "hoai_phase",
+        "Software Application Category": "software_application_category",
+        "Memory Requirements": "memory_requirements",
+        "Software Requirements": "software_requirements",
+        "Supported Platform": "supported_platform",
+        "Operating System": "operating_system",
+        "Feature List": "feature_list",
+        "Supporting Data": "supporting_data",
+        "Sichtbarkeit": "private"
+    },
+    "resource_fields": {
+        "URL": "url",
+        "Name": "name",
+        "Description": "description",
+        "Format": "format",
+        "Access Rights": "restricted_level",
+        "Allowed Users": "allowed_users"
+    }
+}

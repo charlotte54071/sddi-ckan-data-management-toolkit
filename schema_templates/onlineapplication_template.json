@@ -1,0 +1,63 @@
+{
+    "schema_type": "onlineapplication",
+    "field_mappings": {
+        "Title": "title",
+        "URL": "name",
+        "Description": "notes",
+        "Tags": "tag_string",
+        "License": "license_id",
+        "Author": "author__author_name",
+        "Email-Author": "author__author_email",
+        "Maintainer": "maintainer__maintainer_name",
+        "E-Mail Maintainer": "maintainer__maintainer_email",
+        "Phone Maintainer": "maintainer__phone",
+        "Role": "maintainer__role",
+        "Organization": "owner_org",
+        "Hauptkategorie": "main_category",
+        "Thema": "theme",
+        "Language": "language",
+        "Version": "version",
+        "Start of Validity Period": "begin_collection_date",
+        "End of Validity Period": "end_collection_date",
+        "Spatial": "spatial",
+        "Privacy Policy": "licence_agreement",
+        "Life Cycle Phase": "lifecycle_phase",
+        "HOAI Service Phase": "hoai_phase",
+        "Application Category": "application_category",
+        "Browser Requirements": "browser_requirements",
+        "Supported Platform": "supported_platform",
+        "Supporting Data": "supporting_data",
+        "Sichtbarkeit": "private"
+    },
+    "resources": [
+    {
+      "allowed_users": null,
+      "cache_last_updated": null,
+      "cache_url": null,
+      "created": null,
+      "datastore_active": null,
+      "description": null,
+      "format": null,
+      "hash": null,
+      "id": null,
+      "last_modified": null,
+      "metadata_modified": null,
+      "mimetype": null,
+      "mimetype_inner": null,
+      "name": null,
+      "package_id": null,
+      "position": null,
+      "resource_type": null,
+      "restricted": {
+        "level": null,
+        "allowed_users": null
+      },
+      "size": null,
+      "state": null,
+      "url": null,
+      "url_type": null
+    }
+  ],
+  "relationships_as_subject": [],
+  "relationships_as_object": []
+}

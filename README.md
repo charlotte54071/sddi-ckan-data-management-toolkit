@@ -5,18 +5,27 @@
 - [Overview](#overview)
 - [Functionality](#functionality)
 - [Code Structure](#code-structure)
-  - [`create_cat.py`](#`create_cat.py`)
-  - [`write_cat.py`](#`write_cat.py`)
+  - [`create_cat.py`](#create_cat.py)
+  - [`write_cat.py`](#write_cat.py)
+  - [`schema_manager.py`](#schema_manager.py)
 - [Config](#config)
 - [Usage](#usage)
+- [Schemas](#schemas)
 - [Example](#example)
 
 ## Overview
-This repository contains scripts implementation for managing metadata of the catalog entries between an Excel file and a CKAN instance. The main purpose is to automate the process of catalog creation / data retrieval. It includes configuration handling, API communication, Excel manipulation, and data validation. It contains two scripts, `create_cat.py` and `write_cat.py`. 
+This repository contains scripts for managing metadata of catalog entries between an Excel file and a CKAN instance, supporting multiple SDDI schemas. The main purpose is to automate the process of catalog creation and data retrieval. It includes configuration handling, API communication, Excel manipulation, and data validation.
 
-`create_cat.py` automates the process of reading catalog metadata from an Excel file (`SDDI-Metadata.xlsx`), processing it, and uploading it to a CKAN instance via API calls. The script is designed to streamline the integration of metadata into a CKAN server by following a structured workflow.
+## Functionality
 
-The `write_cat.py` script automates the process of retrieving, processing, and inserting catalog data into the `SDDI-Metadata.xlsx` Excel file.
+### `create_cat.py`
+Automates the process of reading catalog metadata from an Excel file (`SDDI-Metadata.xlsx`), processing it based on schema type, and uploading it to a CKAN instance via API calls.
+
+### `write_cat.py`
+Automates the process of retrieving, processing, and inserting catalog data into the `SDDI-Metadata.xlsx` Excel file.
+
+### `schema_manager.py`
+Manages different SDDI schemas and their mappings between Excel columns and CKAN fields.
 
 ![workflow_import-export_excell_ckan](https://github.com/user-attachments/assets/38118a46-2d31-4d6a-83a2-3616eb7df6fd)
 

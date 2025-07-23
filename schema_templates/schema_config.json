@@ -1,0 +1,81 @@
+{
+    "schema_mappings": {
+        "dataset": "schema_templates/dataset_template.json",
+        "device": "schema_templates/device_template.json",
+        "digitaltwin": "schema_templates/digitaltwin_template.json",
+        "geoobject": "schema_templates/geoobject_template.json",
+        "method": "schema_templates/method_template.json",
+        "onlineapplication": "schema_templates/onlineapplication_template.json",
+        "onlineservice": "schema_templates/onlineservice_template.json",
+        "project": "schema_templates/project_template.json",
+        "software": "schema_templates/software_template.json"
+    },
+    "excel_configuration": {
+        "schema_type_column": "Schema_Type",
+        "valid_schema_types": [
+            "dataset",
+            "device",
+            "digitaltwin",
+            "geoobject",
+            "method",
+            "onlineapplication",
+            "onlineservice",
+            "project",
+            "software"
+        ],
+        "common_fields": [
+            "Title",
+            "URL",
+            "Description",
+            "Tags",
+            "License",
+            "Author",
+            "Email-Author",
+            "Maintainer",
+            "E-Mail Maintainer",
+            "Phone Maintainer",
+            "Role",
+            "Organization",
+            "Group",
+            "Language",
+            "Version",
+            "Start of Validity Period",
+            "End of Validity Period",
+            "Spatial",
+            "Privacy Policy",
+            "Life Cycle Phase",
+            "HOAI Service Phase"
+        ],
+        "resources": [
+    {
+      "allowed_users": null,
+      "cache_last_updated": null,
+      "cache_url": null,
+      "created": null,
+      "datastore_active": null,
+      "description": null,
+      "format": null,
+      "hash": null,
+      "id": null,
+      "last_modified": null,
+      "metadata_modified": null,
+      "mimetype": null,
+      "mimetype_inner": null,
+      "name": null,
+      "package_id": null,
+      "position": null,
+      "resource_type": null,
+      "restricted": {
+        "level": null,
+        "allowed_users": null
+      },
+      "size": null,
+      "state": null,
+      "url": null,
+      "url_type": null
+    }
+  ],
+  "relationships_as_subject": [],
+  "relationships_as_object": []
+    }
+}
