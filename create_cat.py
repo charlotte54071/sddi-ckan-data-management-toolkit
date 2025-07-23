@@ -305,7 +305,7 @@ class MetadataManager:
         else:
             raise Exception(f"Organization '{org_title}' not found in available organizations!")
 
-        package_data["type"] = schema_type  # 关键：指定类型
+        package_data["type"] = schema_type
 
         print('DEBUG package_data:', json.dumps(package_data, indent=2, ensure_ascii=False))
         return package_data
