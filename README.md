@@ -27,6 +27,9 @@ Automates the process of retrieving, processing, and inserting catalog data into
 ### `schema_manager.py`
 Manages different SDDI schemas and their mappings between Excel columns and CKAN fields.
 
+### `detect_outdated_files.py`
+Monitors a specified directory for new or changed files based on creation timestamps, compares them with CKAN catalog entries, and reports files that need updating. Features include per-file tracking, configurable filtering, and optimization for large directories.
+
 ![workflow_import-export_excell_ckan](https://github.com/user-attachments/assets/38118a46-2d31-4d6a-83a2-3616eb7df6fd)
 
 ## Functionality
@@ -79,7 +82,16 @@ Utility functions to assist the main components.
 Uses as similar structure but without JSON template. 
 
 ## Config
-Both scripts use configuration files to store the CKAN API key and instance URL for easier reuse:
+All scripts use a `config.ini` file to store configuration parameters. The file will be created automatically on first run with default values.
+
+### Configuration Sections
+- **[CKAN]**: CKAN API configuration
+  - `api_url`: CKAN instance URL (default: http://localhost:5000)
+  - `api_key`: CKAN API key
+
+- **[Monitoring]**: File monitoring configuration for `detect_outdated_files.py`
+  - `allowed_extensions`: Comma-separated list of file extensions to monitor (default: .xlsx,.json,.csv)
+  - `exclude_dirs`: Comma-separated list of directories to exclude (default: __pycache__,TEST,schema_templates,templates)
 
 1. **Configuration Files**:
    - `config_write.ini` (for `write_cat.py`) and `config.ini` (for `create_cat.py`).
@@ -114,6 +126,15 @@ Both scripts use configuration files to store the CKAN API key and instance URL 
 2. Run the script and provide the Excel file path, CKAN catalog name, API key, and CKAN instance URL when prompted.
 3. The script will fetch the catalog data from the CKAN instance and write it to the Excel file in a structured format.
 
+### `detect_outdated_files.py`
+
+1. Configure monitoring settings in `config.ini` (optional)
+2. Run the script:
+   ```bash
+   python detect_outdated_files.py
+   ```
+3. The script will scan the specified directory, compare files with CKAN catalog, and report outdated files grouped by extension.
+
 
 ## Example
 ### `create_cat.py`
@@ -134,5 +155,17 @@ Enter the instance url (e.g. http://192.168.92.1:5000): http://192.168.92.1:5000
 Enter the CKAN catalog name (identifier): catalog-example
 Successfully wrote catalog 'Example Catalog' to .xlsx file.
 
+### `detect_outdated_files.py`
+```bash
+$ python detect_outdated_files.py
+Scanning directory: d:\ckan-docker-CKANofficial\sddi-import-export-excel-tool
+
+Outdated files by extension:
+.xlsx:
+  - test_data.xlsx (New file, not in CKAN)
+.json:
+  - updated_metadata.json (Modified 2023-11-15 14:30:00)
+
+Tracking data updated in file_tracking.json
 
 Error processing catalog Catalog2: Data for required fields is not provided: license is missing

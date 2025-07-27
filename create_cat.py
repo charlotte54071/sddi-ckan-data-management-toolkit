@@ -300,6 +300,25 @@ class MetadataManager:
                 else:
                     package_data[date_field] = str(val)
 
+        # 11. spatial field validation
+        if "spatial" in package_data:
+            spatial_val = package_data.get("spatial", "")
+            if spatial_val and spatial_val.strip():
+                # Try to validate as JSON
+                try:
+                    if isinstance(spatial_val, str):
+                        # Try to parse as JSON to validate
+                        json.loads(spatial_val)
+                    # If it's valid JSON, keep it as is
+                    package_data["spatial"] = spatial_val
+                except (json.JSONDecodeError, TypeError):
+                    # If invalid JSON, remove the spatial field to prevent API errors
+                    print(f"WARNING: Invalid spatial data detected, removing spatial field: {spatial_val}")
+                    del package_data["spatial"]
+            else:
+                # If empty or None, remove the field
+                del package_data["spatial"]
+
         org_title = package_data.get("owner_org", "")
         org_name = None
         for org in self.organisations:
@@ -539,24 +558,48 @@ if __name__ == "__main__":
                                     update_data.pop(key, None)
                                 
                                 print(f"Updating existing dataset: {catalog_title}")
-                                update_resp = ckan_manager.post('/api/3/action/package_update', update_data)
-                                if update_resp.get("success"):
-                                    print(f"Successfully UPDATED: {catalog_title}")
-                                else:
-                                    print(f"Failed to update: {catalog_title} - {update_resp}")
+                                try:
+                                    update_resp = ckan_manager.post('/api/3/action/package_update', update_data)
+                                    if update_resp.get("success"):
+                                        print(f"Successfully UPDATED: {catalog_title}")
+                                    else:
+                                        error_details = update_resp.get('error', {})
+                                        if 'spatial' in str(error_details):
+                                            # Try again without spatial field
+                                            print(f"Spatial field error detected, retrying without spatial data...")
+                                            update_data_no_spatial = update_data.copy()
+                                            update_data_no_spatial.pop('spatial', None)
+                                            retry_resp = ckan_manager.post('/api/3/action/package_update', update_data_no_spatial)
+                                            if retry_resp.get("success"):
+                                                print(f"Successfully UPDATED (without spatial): {catalog_title}")
+                                            else:
+                                                print(f"Failed to update: {catalog_title} - {retry_resp}")
+                                        else:
+                                            print(f"Failed to update: {catalog_title} - {update_resp}")
+                                except Exception as update_error:
+                                    print(f"Update error for {catalog_title}: {str(update_error)}")
                             else:
                                 print(f"No updates needed for: {catalog_title}")
                         else:
-                            # Create new if doesn't exist
-                            print(f"Creating new dataset: {catalog_title}")
-                            response = ckan_manager.post('/api/3/action/package_create', package_data)
-                            if response.get('success'):
-                                print(f"Successfully CREATED: {catalog_title}")
-                            else:
-                                print(f"Failed to create: {catalog_title} - {response}")
+                            # Dataset exists but API call failed for other reasons
+                            print(f"Failed to retrieve dataset {catalog_title}: {show_resp}")
                     except Exception as e:
                         error_msg = str(e)
-                        print(f"Error processing dataset {catalog_title}: {error_msg}")
+                        # Check if it's a "Not found" error (dataset doesn't exist)
+                        if "404" in error_msg or "Not found" in error_msg or "Not Found" in error_msg:
+                            # Create new dataset since it doesn't exist
+                            print(f"Dataset {catalog_title} not found, creating new dataset...")
+                            try:
+                                response = ckan_manager.post('/api/3/action/package_create', package_data)
+                                if response.get('success'):
+                                    print(f"Successfully CREATED: {catalog_title}")
+                                else:
+                                    print(f"Failed to create: {catalog_title} - {response}")
+                            except Exception as create_error:
+                                print(f"Create error for {catalog_title}: {str(create_error)}")
+                        else:
+                            # Other error, not related to dataset existence
+                            print(f"Error processing dataset {catalog_title}: {error_msg}")
                         continue
                 except Exception as e:
                     print(f"FAILED: [Unknown Title] - {str(e)}")

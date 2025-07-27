@@ -6,7 +6,7 @@ url = "https://localhost:8443/api/3/action/package_show"
 headers = {"Authorization": api_key}
 
 # Check Example Dataset 2 specifically
-dataset_id = "exampledataset2"
+dataset_id = "exampledataset"
 
 try:
     data = {"id": dataset_id}

@@ -2,4 +2,8 @@ test.xlsx
 .~lock.test.xlsx#
 config.ini
 .env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
