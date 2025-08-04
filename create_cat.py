@@ -102,11 +102,9 @@ class ExcelHandler:
             print("Warning: No data found in specified range")
         return data
 
-    # Removed generate_test_file, update_test_values, update_organisations, update_categories_and_topics, update_licenses
-
 class MetadataManager:
     def __init__(self, main_config_path):
-        # 加载总配置
+        # add main config
         with open(main_config_path, 'r', encoding='utf-8') as f:
             self.main_config = json.load(f)
         self.schema_mappings = self.main_config.get("schema_mappings", {})
@@ -246,10 +244,8 @@ class MetadataManager:
         # 6. private field handling
         if "private" in package_data:
             sichtbarkeit = str(package_data.get("private", "")).strip()
-            print("DEBUG - Raw visibility value:", sichtbarkeit)
             # Fix visibility logic
             package_data["private"] = sichtbarkeit != "Öffentlich"
-            print("DEBUG - Setting private to:", package_data["private"])
         else:
             # Default to public
             package_data["private"] = False
@@ -257,8 +253,6 @@ class MetadataManager:
         # Ensure state is active
         package_data["state"] = "active"
 
-        print("DEBUG - Final package visibility:", "Public" if not package_data["private"] else "Private")
-        print("DEBUG - Final package state:", package_data["state"])
         # 7. resources
         url = row_data.get('Datei/ Link')
         if url:
@@ -332,30 +326,8 @@ class MetadataManager:
 
         package_data["type"] = schema_type  
 
-        print('DEBUG package_data:', json.dumps(package_data, indent=2, ensure_ascii=False))
         return package_data
 
-def save_config(config_file='config.ini'):
-    config = configparser.ConfigParser()
-    if os.path.exists(config_file):
-        config.read(config_file)
-        api_key = config['DEFAULT'].get('API_KEY')
-        instance_url = config['DEFAULT'].get('INSTANCE_URL')
-        path = config['DEFAULT'].get('excel_file_path')
-    else:
-        api_key = input("Enter the API key: ")
-        while True:
-            instance_url = input("Enter the instance url (e.g. http://192.168.92.1:5000): ")
-            if is_valid_url(instance_url):
-                break
-        path = input("Please enter the Excel file path: ").strip()
-        if not os.path.exists(path):
-            print("The file path does not exist.")
-            exit(0)
-        config['DEFAULT'] = {'API_KEY': api_key, 'INSTANCE_URL': instance_url, 'EXCEL_FILE_PATH': path}
-        with open(config_file, 'w') as configfile:
-            config.write(configfile)
-    return api_key, instance_url, path
 
 # helper functions
 def contains_value_with_index(dicts, value):
@@ -369,17 +341,6 @@ def string_in_dicts(string, list_of_dicts):
         if string == dictionary.get('title') or string == dictionary.get('name'):
             return True, index
     return False, -1
-
-def is_valid_url(url):
-    pattern = re.compile(r"^(http|https)://(?:[0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]{1,5}$")
-    if pattern.match(url):
-        protocol, rest = url.split("://")
-        ip, port = rest.split(":")
-        parts = ip.split(".")
-        if all(0 <= int(part) <= 255 for part in parts):
-            if 0 <= int(port) <= 65535:
-                return True
-    return False
 
 def convert_string_to_tags(input_string):
     if not input_string:  # Handle None or empty string
@@ -490,13 +451,6 @@ def load_config(config_file='config.ini'):
     path = config.get('DEFAULT', 'excel_file_path', fallback=None)
     schema_config = config.get('DEFAULT', 'schema_config', fallback=None)
     return api_key, instance_url, path, schema_config
-
-def is_valid_geojson(val):
-    try:
-        obj = json.loads(val)
-        return isinstance(obj, dict) and "type" in obj and "coordinates" in obj
-    except Exception:
-        return False
 
 def compare_mapped_fields(sheet_data, ckan_data, field_mappings):
     """Compare all mapped fields between sheet data and CKAN data. Return True if different, False if same."""
