@@ -6,54 +6,8 @@ import configparser
 import re
 from datetime import datetime
 from schema_manager import SchemaManager
-
-# Load configuration
-config = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Configuration file not found at {config_path}")
-config.read(config_path)
-
-# CKAN Configuration
-if 'CKAN' in config:
-    CKAN_API_URL = config.get('CKAN', 'api_url', fallback='http://localhost:5000')
-    CKAN_API_KEY = config.get('CKAN', 'api_key', fallback='')
-else:
-    CKAN_API_URL = 'http://localhost:5000'
-    CKAN_API_KEY = ''
-
-# Ensure URL has scheme and handle invalid values
-if not CKAN_API_URL or CKAN_API_URL.lower() == 'none':
-    CKAN_API_URL = 'http://localhost:5000'
-elif not CKAN_API_URL.startswith(('http://', 'https://')):
-    CKAN_API_URL = f'http://{CKAN_API_URL}'
-class CKANManager:
+from ckan_manager import CKANManager
     
-    '''Interacts with the CKAN instance'''
-    def __init__(self, api_url, api_key):
-        self.api_url = api_url
-        self.api_key = api_key
-        self.headers = {
-            'Authorization': self.api_key,
-            'Content-Type': 'application/json'
-        }
-
-    def post(self, endpoint, data=None):
-        url = f"{self.api_url}{endpoint}"
-        response = requests.post(url, json=data, headers=self.headers, verify=False)
-        return self._handle_response(response)
-
-    def get(self, endpoint, params=None):
-        url = f"{self.api_url}{endpoint}"
-        response = requests.get(url, params=params, headers=self.headers, verify=False)
-        return self._handle_response(response)
-
-    def _handle_response(self, response):
-        if response.status_code in [200, 201]:
-            return response.json()
-        else:
-            raise Exception(f"API Error: {response.status_code} - {response.text}")
-
 class ExcelHandler:
     '''Handles interaction with the Excel file'''
     def __init__(self, path):
@@ -312,6 +266,19 @@ class MetadataManager:
             else:
                 # If empty or None, remove the field
                 del package_data["spatial"]
+        
+        # 12. handel multi values
+        if schema_type.lower() == "onlineservice":
+            for excel_col, ckan_field in field_mappings.items():
+                if "supported_method" in ckan_field.lower():
+                    raw_val = row_data.get(excel_col, "")
+                    if isinstance(raw_val, str) and ";" in raw_val:
+                        methods = [m.strip() for m in raw_val.split(";") if m.strip()]
+                        package_data[ckan_field] = methods
+                    elif isinstance(raw_val, str) and raw_val.strip():
+                        package_data[ckan_field] = [raw_val.strip()]
+                    else:
+                        package_data[ckan_field] = []
 
         org_title = package_data.get("owner_org", "")
         org_name = None
@@ -330,118 +297,11 @@ class MetadataManager:
 
 
 # helper functions
-def contains_value_with_index(dicts, value):
-    for index, d in enumerate(dicts):
-        if value in d.values():
-            return True, index
-    return False, -1
-
-def string_in_dicts(string, list_of_dicts):
-    for index, dictionary in enumerate(list_of_dicts):
-        if string == dictionary.get('title') or string == dictionary.get('name'):
-            return True, index
-    return False, -1
-
 def convert_string_to_tags(input_string):
     if not input_string:  # Handle None or empty string
         return []
     words = [word.strip() for word in str(input_string).split(';') if word.strip()]
     return [{'name': word} for word in words]
-
-def create_organizations_and_groups(ckan_manager, metadata_manager):
-    """Create the predefined organizations and groups"""
-    print("\nCreating organizations...")
-    for org in metadata_manager.organisations:
-        try:
-            # Check if organization exists
-            response = ckan_manager.post('/api/3/action/organization_show', {'id': org['name']})
-            print(f"Organization {org['name']} already exists")
-        except Exception:
-            # Create organization if it doesn't exist
-            try:
-                org_data = {
-                    'name': org['name'],
-                    'title': org['title'],
-                    'state': 'active'
-                }
-                ckan_manager.post('/api/3/action/organization_create', org_data)
-                print(f"Created organization: {org['name']}")
-            except Exception as e:
-                print(f"Error creating organization {org['name']}: {str(e)}")
-
-    print("\nCreating groups...")
-    for group in metadata_manager.groups:
-        try:
-            # Check if group exists
-            response = ckan_manager.post('/api/3/action/group_show', {'id': group['name']})
-            print(f"Group {group['name']} already exists")
-        except Exception:
-            # Create group if it doesn't exist
-            try:
-                group_data = {
-                    'name': group['name'],
-                    'title': group['title'],
-                    'state': 'active'
-                }
-                ckan_manager.post('/api/3/action/group_create', group_data)
-                print(f"Created group: {group['name']}")
-            except Exception as e:
-                print(f"Error creating group {group['name']}: {str(e)}")
-
-def cleanup_script_created_items(ckan_manager):
-    """Remove only organizations and groups that were created by this script"""
-    print("\nCleaning up script-created organizations and groups...")
-    
-    # List of organization names from our script
-    script_orgs = [
-        'lwf', 'staatsregierung', 'vermessungsverwaltung', 'denkmalpflege',
-        'statistik', 'umwelt', 'finanzen', 'landwirtschaft', 'gesundheit',
-        'kultus', 'wirtschaft', 'bau', 'innovativ', 'tum', 'geoinformatik',
-        'technologieanbieter', 'hardware', 'software'
-    ]
-    
-    # List of group names from our script
-    script_groups = [
-        'verwaltung', 'stadtplanung', 'umwelt', 'gesundheit', 'energie',
-        'it', 'tourismus', 'wohnen', 'bildung', 'kultur', 'bauen',
-        'handel', 'mobilitaet', 'arbeiten', 'gewerbe', 'landwirtschaft'
-    ]
-    
-    # Remove script-created organizations
-    try:
-        org_response = ckan_manager.post('/api/3/action/organization_list')
-        if org_response['success']:
-            for org_name in org_response['result']:
-                if org_name in script_orgs:
-                    try:
-                        # First delete the organization
-                        ckan_manager.post('/api/3/action/organization_delete', {'id': org_name})
-                        # Then purge it completely
-                        ckan_manager.post('/api/3/action/organization_purge', {'id': org_name})
-                        print(f"Removed script-created organization: {org_name}")
-                    except Exception as e:
-                        if "Not found" not in str(e):
-                            print(f"Error removing organization {org_name}: {str(e)}")
-    except Exception as e:
-        print(f"Error listing organizations: {str(e)}")
-
-    # Remove script-created groups
-    try:
-        group_response = ckan_manager.post('/api/3/action/group_list')
-        if group_response['success']:
-            for group_name in group_response['result']:
-                if group_name in script_groups:
-                    try:
-                        # First delete the group
-                        ckan_manager.post('/api/3/action/group_delete', {'id': group_name})
-                        # Then purge it completely
-                        ckan_manager.post('/api/3/action/group_purge', {'id': group_name})
-                        print(f"Removed script-created group: {group_name}")
-                    except Exception as e:
-                        if "Not found" not in str(e):
-                            print(f"Error removing group {group_name}: {str(e)}")
-    except Exception as e:
-        print(f"Error listing groups: {str(e)}")
 
 def load_config(config_file='config.ini'):
     config = configparser.ConfigParser()
