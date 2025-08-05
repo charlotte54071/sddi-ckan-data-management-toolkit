@@ -13,7 +13,30 @@ import re
 import pytz
 from ckan_manager import CKANManager
 
-# Import the unified CKAN manager
+
+
+# === SETUP ===
+config = configparser.ConfigParser()
+config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+if not os.path.exists(config_path):
+    raise FileNotFoundError(f"Configuration file not found at {config_path}")
+config.read(config_path)
+
+def load_config(config_file='config.ini'):
+    config = configparser.ConfigParser()
+    config.read(config_file)
+    api_key = config.get('DEFAULT', 'api_key', fallback=None)
+    instance_url = config.get('DEFAULT', 'instance_url', fallback=None)
+    path = config.get('DEFAULT', 'excel_file_path', fallback=None)
+    schema_config = config.get('DEFAULT', 'schema_config', fallback=None)
+    return api_key, instance_url, path, schema_config
+
+# === CONFIGURATION ===
+MONITOR_DIR = r'D:\ckan-docker-CKANofficial\sddi-import-export-excel-tool\TEST'
+ALLOWED_EXTENSIONS = tuple(config.get('Monitoring', 'allowed_extensions', fallback='*').lower().split(','))
+EXCLUDE_DIRS = tuple(config.get('Monitoring', 'exclude_dirs', fallback='__pycache__,schema_templates,templates').split(','))
+EXCLUDED_EXTENSIONS = tuple(config.get('Monitoring', 'excluded_extensions', fallback='.tmp,.log,.cache,.pyc,.pyo,.bak,.swp,.DS_Store').lower().split(','))
+TRACKING_FILE = 'file_tracking.json'
 
 # === TIMEZONE CONFIGURATION ===
 BERLIN_TZ = pytz.timezone('Europe/Berlin')
@@ -54,44 +77,6 @@ def parse_ckan_timestamp(timestamp_str, debug=False):
         if debug:
             print(f"         ❌ timestamp parse fail: {e}")
         return None
-
-# === SETUP ===
-config = configparser.ConfigParser()
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
-if not os.path.exists(config_path):
-    raise FileNotFoundError(f"Configuration file not found at {config_path}")
-config.read(config_path)
-
-def load_config(config_file='config.ini'):
-    config = configparser.ConfigParser()
-    config.read(config_file)
-    api_key = config.get('DEFAULT', 'api_key', fallback=None)
-    instance_url = config.get('DEFAULT', 'instance_url', fallback=None)
-    path = config.get('DEFAULT', 'excel_file_path', fallback=None)
-    schema_config = config.get('DEFAULT', 'schema_config', fallback=None)
-    return api_key, instance_url, path, schema_config
-
-# === CONFIGURATION ===
-MONITOR_DIR = r'D:\ckan-docker-CKANofficial\sddi-import-export-excel-tool\TEST'
-ALLOWED_EXTENSIONS = tuple(config.get('Monitoring', 'allowed_extensions', fallback='*').lower().split(','))
-EXCLUDE_DIRS = tuple(config.get('Monitoring', 'exclude_dirs', fallback='__pycache__,schema_templates,templates').split(','))
-EXCLUDED_EXTENSIONS = tuple(config.get('Monitoring', 'excluded_extensions', fallback='.tmp,.log,.cache,.pyc,.pyo,.bak,.swp,.DS_Store').lower().split(','))
-TRACKING_FILE = 'file_tracking.json'
-
-# CKAN Configuration
-if 'CKAN' in config:
-    CKAN_API_URL = config.get('CKAN', 'api_url', fallback='http://localhost:5000')
-    CKAN_API_KEY = config.get('CKAN', 'api_key', fallback='')
-else:
-    CKAN_API_URL = 'http://localhost:5000'
-    CKAN_API_KEY = ''
-
-if not CKAN_API_URL or CKAN_API_URL.lower() == 'none':
-    CKAN_API_URL = 'http://localhost:5000'
-elif not CKAN_API_URL.startswith(('http://', 'https://')):
-    CKAN_API_URL = f'http://{CKAN_API_URL}'
-
-# CKAN Manager is now imported from ckan_manager.py
 
 def debug_search_results(ckan_manager, search_terms=None, file_path=None, verbose=True):
     """
