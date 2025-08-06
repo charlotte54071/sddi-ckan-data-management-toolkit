@@ -551,7 +551,9 @@ def get_file_category(filename):
         'Archives': ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2'],
         'Scripts': ['.py', '.js', '.sh', '.bat', '.ps1', '.r'],
         'Config': ['.ini', '.conf', '.cfg', '.properties', '.env'],
-        'Media': ['.mp4', '.avi', '.mov', '.mp3', '.wav', '.flac']
+        'Media': ['.mp4', '.avi', '.mov', '.mp3', '.wav', '.flac'],
+        '3D Models': ['.obj', '.fbx', '.dae', '.3ds', '.blend', '.max', '.ma', '.mb', '.c4d', '.lwo', '.lws', '.x3d', '.wrl', '.ply', '.stl', '.off', '.3mf', '.amf', '.x', '.md2', '.md3', '.md5mesh', '.ase', '.ifc', '.step', '.stp', '.iges', '.igs', '.brep', '.gltf', '.glb', '.usd', '.usda', '.usdc', '.usdz'],
+        '2D Geo Files': ['.shp', '.kml', '.kmz', '.gpx', '.geojson', '.gml', '.dwg', '.dxf', '.dgn', '.tab', '.mif', '.mid', '.e00', '.000', '.gdb', '.mdb', '.sqlite', '.gpkg', '.nc', '.hdf', '.hdf5', '.tif', '.tiff', '.ecw', '.jp2', '.sid', '.img', '.bil', '.bsq', '.bip', '.asc', '.xyz', '.las', '.laz', '.ply', '.pcd', '.pts']
     }
     
     for category, extensions in categories.items():

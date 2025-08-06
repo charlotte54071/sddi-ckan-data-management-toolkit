@@ -30,6 +30,10 @@ Manages different SDDI schemas and their mappings between Excel columns and CKAN
 ### `detect_outdated_files.py`
 Monitors a specified directory for new or changed files based on creation timestamps, compares them with CKAN catalog entries, and reports files that need updating. Features include per-file tracking, configurable filtering, and optimization for large directories.
 
+**🆕 Enhanced File Type Support:**
+- **3D Models**: OBJ, FBX, DAE, 3DS, Blender (.blend), Maya (.ma/.mb), Cinema4D (.c4d), STL, PLY, glTF/GLB, USD, IFC, STEP/STP files
+- **2D Geo Files**: Shapefile (.shp), KML/KMZ, GPX, GeoJSON, GML, AutoCAD (.dwg/.dxf), GeoTIFF, NetCDF (.nc), HDF5, LAS/LAZ point clouds
+
 ![workflow_import-export_excell_ckan](https://github.com/user-attachments/assets/38118a46-2d31-4d6a-83a2-3616eb7df6fd)
 
 ## Functionality
@@ -92,6 +96,18 @@ All scripts use a `config.ini` file to store configuration parameters. The file 
 - **[Monitoring]**: File monitoring configuration for `detect_outdated_files.py`
   - `allowed_extensions`: Comma-separated list of file extensions to monitor (default: .xlsx,.json,.csv)
   - `exclude_dirs`: Comma-separated list of directories to exclude (default: __pycache__,TEST,schema_templates,templates)
+  
+  **Extended Configuration Examples:**
+  ```ini
+  # For 3D modeling workflows:
+  allowed_extensions = .obj,.fbx,.dae,.3ds,.blend,.stl,.ply,.gltf,.glb,.usd,.ifc,.step
+  
+  # For GIS and geospatial workflows:
+  allowed_extensions = .shp,.kml,.kmz,.gpx,.geojson,.gml,.dwg,.dxf,.tif,.nc,.hdf5,.las,.laz
+  
+  # For comprehensive monitoring (all supported file types):
+  allowed_extensions = *
+  ```
 
 1. **Configuration Files**:
    - `config_write.ini` (for `write_cat.py`) and `config.ini` (for `create_cat.py`).

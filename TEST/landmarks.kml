@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Sample City Landmarks</name>
+    <description>Important landmarks and points of interest</description>
+    
+    <Style id="landmark-style">
+      <IconStyle>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    
+    <Placemark>
+      <name>City Hall</name>
+      <description>Main administrative building of the city</description>
+      <styleUrl>#landmark-style</styleUrl>
+      <Point>
+        <coordinates>13.407954,52.522008,0</coordinates>
+      </Point>
+      <ExtendedData>
+        <Data name="type">
+          <value>government</value>
+        </Data>
+        <Data name="established">
+          <value>1895</value>
+        </Data>
+        <Data name="visitors_per_year">
+          <value>150000</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+    <Placemark>
+      <name>Central Park</name>
+      <description>Large public park in the city center</description>
+      <styleUrl>#landmark-style</styleUrl>
+      <Point>
+        <coordinates>13.412954,52.527008,0</coordinates>
+      </Point>
+      <ExtendedData>
+        <Data name="type">
+          <value>recreation</value>
+        </Data>
+        <Data name="area_hectares">
+          <value>45.2</value>
+        </Data>
+        <Data name="facilities">
+          <value>playground,lake,walking_trails</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+    <Placemark>
+      <name>Main Train Station</name>
+      <description>Primary railway transportation hub</description>
+      <styleUrl>#landmark-style</styleUrl>
+      <Point>
+        <coordinates>13.405954,52.518008,0</coordinates>
+      </Point>
+      <ExtendedData>
+        <Data name="type">
+          <value>transportation</value>
+        </Data>
+        <Data name="platforms">
+          <value>12</value>
+        </Data>
+        <Data name="daily_passengers">
+          <value>85000</value>
+        </Data>
+      </ExtendedData>
+    </Placemark>
+    
+  </Document>
+</kml>
