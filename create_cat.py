@@ -5,7 +5,6 @@ import os
 import configparser
 import re
 from datetime import datetime
-from schema_manager import SchemaManager
 from ckan_manager import CKANManager
     
 class ExcelHandler:

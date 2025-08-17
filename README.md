@@ -1,187 +1,214 @@
-# CKAN Catalog Creation Automation
 
-## Table of Contents
 
-- [Overview](#overview)
-- [Functionality](#functionality)
-- [Code Structure](#code-structure)
-  - [`create_cat.py`](#create_cat.py)
-  - [`write_cat.py`](#write_cat.py)
-  - [`schema_manager.py`](#schema_manager.py)
-- [Config](#config)
-- [Usage](#usage)
-- [Schemas](#schemas)
-- [Example](#example)
+
+          
+# CKAN Tools - Excel Import & File Monitor
+
+A comprehensive toolkit for managing CKAN datasets through Excel imports and file monitoring capabilities.
 
 ## Overview
-This repository contains scripts for managing metadata of catalog entries between an Excel file and a CKAN instance, supporting multiple SDDI schemas. The main purpose is to automate the process of catalog creation and data retrieval. It includes configuration handling, API communication, Excel manipulation, and data validation.
 
-## Functionality
+This toolkit provides three main components:
+1. **Excel Import Tool** (`create_cat.py`) - Import metadata from Excel files to create/update CKAN datasets
+2. **File Monitor Tool** (`detect_outdated_files.py`) - Monitor local files and compare with CKAN resources
+3. **GUI Application** (`ckan_tools_ui.py`) - User-friendly interface for both tools
 
-### `create_cat.py`
-Automates the process of reading catalog metadata from an Excel file (`SDDI-Metadata.xlsx`), processing it based on schema type, and uploading it to a CKAN instance via API calls.
+## Features
 
-### `write_cat.py`
-Automates the process of retrieving, processing, and inserting catalog data into the `SDDI-Metadata.xlsx` Excel file.
+### Excel Import Tool
+- Reads Excel files with multiple schema sheets (dataset, device, digitaltwin, etc.)
+- Creates or updates CKAN datasets based on Excel metadata
+- Supports multiple schema types: dataset, device, digitaltwin, geoobject, onlineapplication, onlineservice, project, software
+- Handles complex field mappings and data validation
+- Manages organizations, groups, tags, and resources automatically
+- Supports both public and private datasets
 
-### `schema_manager.py`
-Manages different SDDI schemas and their mappings between Excel columns and CKAN fields.
+### File Monitor Tool
+- Resource-first file monitoring approach
+- Compares local file timestamps with CKAN resource timestamps
+- Automatic timezone conversion (UTC to Europe/Berlin)
+- Supports multiple file formats and categories
+- Provides detailed sync status reports
+- Categorizes files by type (Documents, Images, 3D Models, Geo Files, etc.)
 
-### `detect_outdated_files.py`
-Monitors a specified directory for new or changed files based on creation timestamps, compares them with CKAN catalog entries, and reports files that need updating. Features include per-file tracking, configurable filtering, and optimization for large directories.
+### GUI Application
+- Tabbed interface for both Excel import and file monitoring
+- Real-time log output with Unicode support
+- File browser integration
+- Configuration management
+- Progress tracking and error handling
 
-**🆕 Enhanced File Type Support:**
-- **3D Models**: OBJ, FBX, DAE, 3DS, Blender (.blend), Maya (.ma/.mb), Cinema4D (.c4d), STL, PLY, glTF/GLB, USD, IFC, STEP/STP files
-- **2D Geo Files**: Shapefile (.shp), KML/KMZ, GPX, GeoJSON, GML, AutoCAD (.dwg/.dxf), GeoTIFF, NetCDF (.nc), HDF5, LAS/LAZ point clouds
+## Installation
 
-![workflow_import-export_excell_ckan](https://github.com/user-attachments/assets/38118a46-2d31-4d6a-83a2-3616eb7df6fd)
+### Prerequisites
+- Python 3.7+
+- CKAN instance with API access
 
-## Functionality
-### `create_cat.py`
-The script consists of several components and achieves the following:
+### Required Dependencies
+```bash
+pip install -r requirements.txt
+```
 
-1. **Reads metadata**: Extracts catalog metadata from a predefined Excel file format.
-2. **Validates data**: Ensures required fields are present and valid.
-3. **Uploads to CKAN**: Creates or updates datasets on the CKAN instance using API calls.
-4. **Handles configuration**: Manages CKAN API keys and instance URLs for reuse.
+Key dependencies:
+- `openpyxl` - Excel file handling
+- `requests` - HTTP API communication
+- `pytz` - Timezone handling
+- `tkinter` - GUI framework (usually included with Python)
 
-### `write_cat.py`
-1. **CKAN Interaction**: Retrieves catalog metadata via the CKAN API using the `CKANManager` class and handles API responses.
-2. **Excel File Handling**: Uses the `ExcelHandler` class to write catalog details (title, description, tags, license, organization, groups, resources) into designated Excel columns.
-3. **Configuration and Validation**: Saves CKAN API keys and instance URLs in `config_write.ini` for reuse and validates URLs.
-4. **Resource Management**: Supports writing multiple resources (URL, name, description, format) across predefined placeholders.
-5. **Error Handling**: Ensures robust handling of API or file operation errors with meaningful feedback.
+## Configuration
 
-## Code Structure
-### `create_cat.py`
-#### JSON Template
+### 1. Create Configuration File
+Copy `config.ini.example` to `config.ini` and configure:
 
-The JSON template is based on the `ckan_dataset.yaml` scheming. This template is used to construct the payload for creating datasets in CKAN. Any changes to the CKAN scheming require corresponding updates to this template.
+```ini
+[DEFAULT]
+api_key = your-ckan-api-key
+instance_url = https://your-ckan-instance.com
+excel_file_path = SDDI-Metadata.xlsx
+schema_config = schema_templates/schema_config.json
 
-#### CKANManager
+[Monitoring]
+monitor_dir = /path/to/monitor/directory
+allowed_extensions = *
+excluded_extensions = .tmp,.log,.cache,.pyc,.pyo,.bak,.swp,.DS_Store
+exclude_dirs = __pycache__,schema_templates,templates
+```
 
-Handles interactions with the CKAN instance, enabling API requests for dataset management.
-
-#### ExcelHandler
-
-Processes the Excel file (`SDDI-Metadata.xlsx`) and extracts relevant metadata.
-
-#### MetadataManager
-
-Validates metadata and constructs the data payload for CKAN.
-
-
-#### ConfigManager
-
-Stores the JSON template and manages configurations for CKAN instance access.
-
-
-#### Helper Functions
-
-Utility functions to assist the main components.
-
-
-### `write_cat.py`
-
-Uses as similar structure but without JSON template. 
-
-## Config
-All scripts use a `config.ini` file to store configuration parameters. The file will be created automatically on first run with default values.
-
-### Configuration Sections
-- **[CKAN]**: CKAN API configuration
-  - `api_url`: CKAN instance URL (default: http://localhost:5000)
-  - `api_key`: CKAN API key
-
-- **[Monitoring]**: File monitoring configuration for `detect_outdated_files.py`
-  - `allowed_extensions`: Comma-separated list of file extensions to monitor (default: .xlsx,.json,.csv)
-  - `exclude_dirs`: Comma-separated list of directories to exclude (default: __pycache__,TEST,schema_templates,templates)
-  
-  **Extended Configuration Examples:**
-  ```ini
-  # For 3D modeling workflows:
-  allowed_extensions = .obj,.fbx,.dae,.3ds,.blend,.stl,.ply,.gltf,.glb,.usd,.ifc,.step
-  
-  # For GIS and geospatial workflows:
-  allowed_extensions = .shp,.kml,.kmz,.gpx,.geojson,.gml,.dwg,.dxf,.tif,.nc,.hdf5,.las,.laz
-  
-  # For comprehensive monitoring (all supported file types):
-  allowed_extensions = *
-  ```
-
-1. **Configuration Files**:
-   - `config_write.ini` (for `write_cat.py`) and `config.ini` (for `create_cat.py`).
-   - Created automatically the first time the script runs.
-
-2. **Setup**:
-   - On first run, you will be prompted to enter the CKAN API key and instance URL (e.g., `http://192.168.92.1:5000`).
-   - These details are saved in the configuration file for future runs.
-
-3. **Editing Configuration**:
-   - To update the API key or instance URL, open the `.ini` file in a text editor and modify the values.
+### 2. Schema Templates
+The tool uses JSON schema templates located in `schema_templates/`:
+- `dataset_template.json`
+- `device_template.json`
+- `digitaltwin_template.json`
+- `geoobject_template.json`
+- `onlineapplication_template.json`
+- `onlineservice_template.json`
+- `project_template.json`
+- `software_template.json`
 
 ## Usage
 
-### `create_cat.py`
-
-1. Place the `SDDI-Metadata.xlsx` file in the desired directory.
-2. Install `openpyxl` library if is not installed on your system:
-`pip install openpyxl`
-3. Run the script:
-`python create_cat.py`
-4. provide the path to the Excel file when prompted: 
-`.../path/to/SDDI-Metadata.xlsx`
-5. Enter the [CKAN API key](https://docs.ckan.org/en/2.11/api/index.html) and instance URL when prompted. (The CKAN API key can be found in your CKAN instance in `user`page.) These will be saved for future use.
-6. The script will process the metadata and interact with the CKAN API to create or update datasets.
-
-** Please note that the Excel file **must be closed** when the script is run and that the name of the file **isn't allowed to be changed**.
-
-### `write_cat.py`
-
-1. Ensure the `SDDI-Metadata.xlsx` file exists in the specified directory.
-2. Run the script and provide the Excel file path, CKAN catalog name, API key, and CKAN instance URL when prompted.
-3. The script will fetch the catalog data from the CKAN instance and write it to the Excel file in a structured format.
-
-### `detect_outdated_files.py`
-
-1. Configure monitoring settings in `config.ini` (optional)
-2. Run the script:
-   ```bash
-   python detect_outdated_files.py
-   ```
-3. The script will scan the specified directory, compare files with CKAN catalog, and report outdated files grouped by extension.
-
-
-## Example
-### `create_cat.py`
+### GUI Application (Recommended)
 ```bash
-$ pip install openpyxl
-python create_cat.py
-Please enter the file path: /path/to/SDDI-Metadata.xlsx
-Enter the API key: your-api-key
-Enter the instance url (e.g. http://192.168.92.1:5000): http://192.168.92.1:5000
-successfully created catalog Catalog1
+python ckan_tools_ui.py
 ```
-### `write_cat.py`
+
+The GUI provides:
+- **Excel Import Tab**: Configure and run Excel imports
+![GUI Screenshot](excel_import_view.png)
+- **File Monitor Tab**: Monitor file synchronization status
+![GUI Screenshot](file_monitor_view.png)
+
+### Command Line Usage
+
+#### Excel Import
 ```bash
-$ python write_cat.py
-Please enter the Excel file path: /path/to/SDDI-Metadata.xlsx
-Enter the API key: your-api-key
-Enter the instance url (e.g. http://192.168.92.1:5000): http://192.168.92.1:5000
-Enter the CKAN catalog name (identifier): catalog-example
-Successfully wrote catalog 'Example Catalog' to .xlsx file.
+python create_cat.py
+```
 
-### `detect_outdated_files.py`
+#### File Monitor
 ```bash
-$ python detect_outdated_files.py
-Scanning directory: d:\ckan-docker-CKANofficial\sddi-import-export-excel-tool
+# Basic monitoring
+python detect_outdated_files.py
 
-Outdated files by extension:
-.xlsx:
-  - test_data.xlsx (New file, not in CKAN)
-.json:
-  - updated_metadata.json (Modified 2023-11-15 14:30:00)
+# With debug output
+python detect_outdated_files.py --debug
+```
 
-Tracking data updated in file_tracking.json
+## Excel File Format
 
-Error processing catalog Catalog2: Data for required fields is not provided: license is missing
+**Important**: If users want to use the import metadata from Excel files to create/update CKAN datasets tool, users have to fill in this table by categories in `SDDI-Metadata.xlsx`. Then the tool will based on the content in the excel to registrate data on CKAN.
+
+The Excel file should contain separate sheets for each schema type:
+
+### Required Sheets
+- `dataset` - General datasets
+- `device` - Hardware devices
+- `digitaltwin` - Digital twin models
+- `geoobject` - Geographic objects
+- `onlineapplication` - Web applications
+- `onlineservice` - Online services
+- `project` - Project information
+- `software` - Software packages
+
+### Column Mapping
+Each sheet should have columns that map to CKAN fields as defined in the schema templates. Common columns include:
+- `Name` - Dataset title
+- `Beschreibung` - Description
+- `Organisation` - Owner organization
+- `Datei/ Link` - Resource URL
+- `Format` - File format
+- `zugriffsrechte` - Access rights
+- `Sichtbarkeit` - Visibility (public/private)
+
+## File Monitoring
+
+The file monitor tool:
+1. Scans the configured directory for supported files
+2. Queries CKAN for matching resources by name
+3. Compares timestamps (local creation time vs CKAN last_modified)
+4. Reports files that need synchronization
+
+### Supported File Categories
+- **Documents**: PDF, DOC, DOCX, TXT, etc.
+- **Spreadsheets**: XLSX, XLS, CSV, ODS
+- **Images**: JPG, PNG, GIF, SVG, etc.
+- **3D Models**: STL, OBJ, FBX, GLTF, IFC, etc.
+- **Geo Files**: SHP, KML, GeoJSON, GPX, etc.
+- **Archives**: ZIP, RAR, 7Z, TAR, etc.
+
+## API Integration
+
+The tools integrate with CKAN API endpoints:
+- `package_create` - Create new datasets
+- `package_update` - Update existing datasets
+- `package_show` - Retrieve dataset information
+- `resource_search` - Search for resources
+- `package_search` - Search for packages
+
+## Error Handling
+
+- **Unicode Support**: Handles special characters and emojis
+- **SSL Verification**: Supports self-signed certificates
+- **Timeout Management**: 300-second timeout for operations
+- **Graceful Degradation**: Fallback mechanisms for API failures
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Unicode Errors**: The GUI handles Unicode characters by converting them to ASCII equivalents
+2. **SSL Warnings**: Disabled for self-signed certificates
+3. **Timeout Issues**: Large files may require timeout adjustments
+4. **Schema Validation**: Ensure Excel columns match schema template mappings
+
+### Debug Mode
+Enable debug mode for detailed logging:
+```bash
+python detect_outdated_files.py --debug
+```
+
+## File Structure
+```
+sddi-import-export-excel-tool/
+├── ckan_tools_ui.py          # GUI application
+├── create_cat.py             # Excel import tool
+├── detect_outdated_files.py  # File monitor tool
+├── ckan_manager.py           # CKAN API wrapper
+├── config.ini.example        # Configuration template
+├── SDDI-Metadata.xlsx        # Default Excel template
+├── schema_templates/         # JSON schema definitions
+├── TEST/                     # Test files directory
+└── requirements.txt          # Python dependencies
+```
+
+## Contributing
+
+1. Ensure all dependencies are installed
+2. Follow the existing code structure
+3. Test with both GUI and command-line interfaces
+4. Update schema templates as needed
+
+## License
+
+This project is part of the CKAN ecosystem and follows standard open-source practices.
+        
