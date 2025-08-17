@@ -335,44 +335,64 @@ def scan_directory(directory: str, debug: bool = False) -> Dict[str, dict]:
 
 
 # ============== 结果展示 ==============
+# 在文件开头添加，禁用SSL警告
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 def display_results(outdated: List[dict]) -> None:
     if not outdated:
-        print("\n✅ All files are already in CKAN and up to date!")
+        print("✅ All files are up-to-date")
+
         return
 
-    print(f"\n📤 Files that need synchronization ({len(outdated)} files):")
-
-    files_by_reason = defaultdict(list)
-    files_by_category = defaultdict(lambda: defaultdict(list))
-    total_size = 0
-
+    print(f"\nNeeds to sync ({len(outdated)} files):")
+    
     for f in outdated:
+        fname = os.path.basename(f["path"])
         reason = f.get("reason", "Needs sync")
-        files_by_reason[reason].append(f)
+        size_str = format_size(f.get("size", 0))
+        
+        if reason == "Missing in CKAN":
+            status = "❌ Not found in CKAN"
+        else:
+            status = "📝 Local file is newer"
+            
+        print(f"  {fname} ({size_str}) - {status}")
 
-        category = f.get("category", "Other")
-        ext = os.path.splitext(f["path"])[1].lower() or "no extension"
-        files_by_category[category][ext].append(f)
+def main():
+    # 禁用所有不必要的输出
+    api_key, api_url, _, _ = load_config()
+    
+    # 简单连接测试（静默）
+    ok, res = _ckan_http_get(api_url, api_key, "status_show", {}, False)
+    if not ok:
+        print(f"❌ Failed to connect to CKAN server: {res}")
+        return
 
-        total_size += f.get("size", 0)
-
-    print("\n📊 Sync reason statistics:")
-    for reason, files in files_by_reason.items():
-        print(f"   {reason}: {len(files)} files")
-
-    for category in sorted(files_by_category.keys()):
-        print(f"\n=== {category.upper()} ===")
-        by_ext = files_by_category[category]
-        for ext in sorted(by_ext.keys()):
-            group = by_ext[ext]
-            group_size = sum(item.get("size", 0) for item in group)
-            print(f"\n{ext.upper()} files ({len(group)} files, {format_size(group_size)}):")
-            for item in sorted(group, key=lambda x: x["path"]):
-                fname = os.path.basename(item["path"])
-                size_str = format_size(item.get("size", 0))
-                reason = item.get("reason", "Needs sync")
-                icon = "🆕" if reason == "Missing in CKAN" else "📝"
-                print(f"  {icon} {fname} ({size_str}) - {reason}")
+    local_files = scan_directory(MONITOR_DIR, debug=False)
+    outdated: List[dict] = []
+    
+    print(f"🔍 Scanning {len(local_files)} files...\n")
+    
+    for path, info in local_files.items():
+        fname = os.path.basename(path)
+        ckan_time, status = check_ckan_by_resource_only(path, api_url, api_key, debug=False)
+        
+        if ckan_time:
+            local_time = info["created"]
+            if local_time > ckan_time:
+                print(f"📝 {fname} - Local file is newer")
+                outdated.append({**info, "reason": "Local is newer"})
+            else:
+                print(f"✅ {fname} - Already up-to-date")
+        else:
+            print(f"❌ {fname} - Not found in CKAN")
+            outdated.append({**info, "reason": "Missing in CKAN"})
+    
+    if outdated:
+        print(f"\n📊 Total: {len(outdated)} files need sync")
+    else:
+        print("\n✅ All files are up-to-date")
 
     print(f"\n📊 Total: {len(outdated)} files, {format_size(total_size)}")
     print("\n💡 Legend:")
