@@ -400,4 +400,18 @@ class CKANManager:
         except Exception as e:
             if self.debug:
                 print(f"❌ Get all datasets error: {e}")
-            return None 
+            return None
+    
+    def search_resources(self, query):
+        """
+        Search for resources using the resource_search API
+        """
+        try:
+            endpoint = "/api/3/action/resource_search"
+            # Use POST request as required by the API
+            data = {'query': query}
+            return self.post(endpoint, data=data)
+        except Exception as e:
+            if self.debug:
+                print(f"❌ Resource search error: {e}")
+            return None

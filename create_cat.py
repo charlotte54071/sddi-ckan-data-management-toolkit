@@ -279,6 +279,20 @@ class MetadataManager:
                         package_data[ckan_field] = [raw_val.strip()]
                     else:
                         package_data[ckan_field] = []
+        
+        # Handle digitaltwin multi-value fields
+        elif schema_type.lower() == "digitaltwin":
+            for excel_col, ckan_field in field_mappings.items():
+                if ckan_field == "twin_capabilities":
+                    raw_val = row_data.get(excel_col, "")
+                    if isinstance(raw_val, str) and ";" in raw_val:
+                        capabilities = [c.strip() for c in raw_val.split(";") if c.strip()]
+                        package_data[ckan_field] = capabilities
+                    elif isinstance(raw_val, str) and raw_val.strip():
+                        package_data[ckan_field] = [raw_val.strip()]
+                    else:
+                        # 如果为空，设置为空列表而不是空字符串
+                        package_data[ckan_field] = []
 
         org_title = package_data.get("owner_org", "")
         org_name = None

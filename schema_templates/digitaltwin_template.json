@@ -24,6 +24,8 @@
         "Life Cycle Phase": "lifecycle_phase",
         "HOAI Service Phase": "hoai_phase",
         "Simulation Model": "simulation_model",
+        "Digital Twin Level": "twin_level",
+        "Digital Twin Capabilities": "twin_capabilities",
         "Sichtbarkeit": "private"
     },
     "resources": [
