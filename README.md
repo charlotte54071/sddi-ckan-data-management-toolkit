@@ -98,6 +98,19 @@ The GUI provides:
 - **File Monitor Tab**: Monitor file synchronization status
 ![GUI Screenshot](file_monitor_view.png)
 
+### Live Web Application
+For convenient access without local installation, you can use the live web application:
+
+🌐 **Live Demo**: https://w6azqhwjha2u9sphspmivn.streamlit.app/
+
+The web application provides the same functionality as the local GUI:
+- Excel import capabilities
+- File monitoring tools
+- Real-time processing and feedback
+- No installation required - runs directly in your browser
+
+*Note: The live web app is hosted on Streamlit Cloud and provides the same core features as the local application.*
+
 ### Command Line Usage
 
 #### Excel Import
